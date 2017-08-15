@@ -36,8 +36,8 @@ def convert_and_persist():
         raw_image_string = image.tostring()
         
         # Recreate the image using the original dtype
-        image2 = numpy.fromstring(raw_image_string, dtype=ds.pixel_array.dtype)
-        image2 = numpy.reshape(image2, (height, width))
+        # image2 = numpy.fromstring(raw_image_string, dtype=ds.pixel_array.dtype)
+        # image2 = numpy.reshape(image2, (height, width))
 
         # Prepare row that is to be written
         row = tf.train.Example(features = tf.train.Features(feature = {

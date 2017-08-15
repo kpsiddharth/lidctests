@@ -23,12 +23,12 @@ for root, dirs, files in os.walk(path):
                 pixel_array = numpy.shape(ds._pixel_data_numpy())
                 if pixel_array[0] == STANDARD_HEIGHT and pixel_array[1] == STANDARD_LENGTH:
                     pass
+                    pylab.imshow(ds.pixel_array, cmap = pylab.cm.bone)
+                    pylab.show()
                 else:
                     print ('Shape = ', numpy.shape(ds._pixel_data_numpy()))
-                    #pylab.imshow(ds.pixel_array, cmap = pylab.cm.bone)
-                    #pylab.show()
                 pass
 
-print 'X-Ray Count = ', large_count
-print 'CT Scan Count = ', small_count
+print ('X-Ray Count = ', large_count)
+print ('CT Scan Count = ', small_count)
 #print type(ds.dir('ReferringPhysicianName')[0])
