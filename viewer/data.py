@@ -6,7 +6,7 @@ import pylidc as pl
 annotations = pl.query(pl.Annotation)
 
 #Taking only 3 annotations-If need to check data
-annotations = qu.filter(or_(pl.Annotation.scan_id == 14, pl.Annotation.scan_id == 7,pl.Annotation.scan_id == 10))
+#annotations = qu.filter(or_(pl.Annotation.scan_id == 14, pl.Annotation.scan_id == 7,pl.Annotation.scan_id == 10))
 
 #Counting Total annotation/Nodule
 annotations_count = annotations.count()
