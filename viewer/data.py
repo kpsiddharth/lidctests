@@ -1,12 +1,12 @@
 import numpy as np
 import pylidc as pl
-#from sqlalchemy import or_
+from sqlalchemy import or_
 
 #Collecting all annotation object.
 annotations = pl.query(pl.Annotation)
 
 #Taking only 3 annotations-If need to check data
-#annotations = qu.filter(or_(pl.Annotation.scan_id == 14, pl.Annotation.scan_id == 7,pl.Annotation.scan_id == 10))
+#annotations = annotations.filter(or_(pl.Annotation.scan_id == 17, pl.Annotation.scan_id == 27,pl.Annotation.scan_id == 10))
 
 #Counting Total annotation/Nodule
 annotations_count = annotations.count()
@@ -22,9 +22,13 @@ target_data = np.zeros(annotations_count)
 #Updating nodule and target data with actual value 
 #by iterating on each annotation/nodule.
 for count, annotation in enumerate(annotations):
-    ann_vol, ann_seg = annotation.uniform_cubic_resample(side_length = 39)
-    resampled_nodule_data[count] = ann_vol
-    target_data[count] = annotation.malignancy
+    try:
+        ann_vol, ann_seg = annotation.uniform_cubic_resample(side_length = 39)
+        resampled_nodule_data[count] = ann_vol
+        target_data[count] = annotation.malignancy
+    except Exception as e:
+        print  e.message, annotation.scan_id
+    
 
 #Converting 4D nodule data into 2D.
 #As we can't save nD(n>2) array as it is into file.
