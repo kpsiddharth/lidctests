@@ -19,6 +19,8 @@ resampled_nodule_data = np.zeros((annotations_count,40,40,40))
 #It will be used as target data in CNN.
 target_data = np.zeros(annotations_count)
 
+count = 0
+
 #Updating nodule and target data with actual value 
 #by iterating on each annotation/nodule.
 for count, annotation in enumerate(annotations):
@@ -28,6 +30,10 @@ for count, annotation in enumerate(annotations):
         target_data[count] = annotation.malignancy
     except Exception as e:
         print  e.message, annotation.scan_id
+    
+    count = count+1
+    if count > 250:
+        break
     
 
 #Converting 4D nodule data into 2D.
