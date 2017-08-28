@@ -9,7 +9,8 @@ annotations = pl.query(pl.Annotation)
 #annotations = annotations.filter(or_(pl.Annotation.scan_id == 17, pl.Annotation.scan_id == 27,pl.Annotation.scan_id == 10))
 
 #Counting Total annotation/Nodule
-annotations_count = annotations.count()
+#annotations_count = annotations.count()
+annotations_count = 1500
 
 #Creating numpy array for nodule data.
 #It will be used as training input data in CNN.
@@ -19,7 +20,7 @@ resampled_nodule_data = np.zeros((annotations_count,40,40,40))
 #It will be used as target data in CNN.
 target_data = np.zeros(annotations_count)
 
-count = 0
+counter = 0
 
 #Updating nodule and target data with actual value 
 #by iterating on each annotation/nodule.
@@ -30,11 +31,11 @@ for count, annotation in enumerate(annotations):
         target_data[count] = annotation.malignancy
     except Exception as e:
         print  e.message, annotation.scan_id
-    
-    count = count+1
-    if count > 250:
+
+    counter = counter+1
+    print 'Counter = ', counter
+    if counter > annotations_count:
         break
-    
 
 #Converting 4D nodule data into 2D.
 #As we can't save nD(n>2) array as it is into file.
@@ -46,5 +47,5 @@ resampled_nodule_data_in_2D = np.reshape(resampled_nodule_data,(annotations_coun
 resampled_nodule_data_in_2D_int8 = resampled_nodule_data_in_2D.astype(np.int8)
 
 #storing nodule data and target data in CSV format.
-np.savetxt("final_data.csv", resampled_nodule_data_in_2D_int8, delimiter=",")
-np.savetxt("target_data.csv", target_data, delimiter=",")
+np.savetxt("final_data_1.csv", resampled_nodule_data_in_2D_int8, delimiter=",")
+np.savetxt("target_data_1.csv", target_data, delimiter=",")
