@@ -30,5 +30,6 @@ def generate_batches(file_name, out_dir='gen_data/', out_file='databatch_', batc
     print 'Finished Batch Generation ...'
 
 print 'Generating Training Data Batches .. '
+generate_batches('datafull/target_data.csv', out_file='testbatch_')
 generate_batches('datafull/final_data.csv')
 
