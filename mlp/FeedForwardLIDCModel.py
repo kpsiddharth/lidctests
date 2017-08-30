@@ -18,7 +18,28 @@ target_data = []
 
 data_size = 6589
 num_classes = 6
-num_iter = 1
+num_iter = 1000
+
+def load_data_from_npz():
+    print 'Loading data from NPZ ..'
+    training_data_set = 'gen_data/full/train_data.npz'
+    training_trgt_set = 'gen_data/full/train_targets_data.npz'
+    test_data_set = 'gen_data/full/test_data.npz'
+    test_trgt_set = 'gen_data/full/test_targets_data.npz'
+
+    training_data = np.load(training_data_set)
+    training_data = training_data['data']
+    trn_trgt_data = np.load(training_trgt_set)
+    trn_trgt_data = trn_trgt_data['data']
+
+    test_data     = np.load(test_data_set)
+    test_data     = test_data['data']
+    test_trgt     = np.load(test_trgt_set)
+    test_trgt     = test_trgt['data']
+
+    training_data, trn_trgt_data = preprocess_training_data(training_data, trn_trgt_data)
+    test_data, test_trgt = preprocess_training_data(test_data, test_trgt)
+    return training_data, trn_trgt_data, test_data, test_trgt
 
 def load_data():
     print ('Loading Input Data ..')
@@ -35,19 +56,8 @@ def load_data():
     for j in i:
         new_target_data[j, target_data[j]] = 1
 
-    # print ('Sample Data = ', training_data[0][0:30])
-    # print ('Sample Data = ', training_data[10][0:30])
-
     print ('New Target Data = \n\n', new_target_data)
 
-    #cdata = np.concatenate((training_data, target_data), axis = 1)
-    #print ('CData Shape = ', np.shape(cdata))
-    
-    # training_data = np.reshape(training_data, (50, 40, 40, 40))
-    # target_data = np.reshape(target_data, (data_size, 1))
-    # print ('Training Data Shape = ', np.shape(training_data))
-    # print ('Training Results Shape = ', np.shape(target_data))
-    
     training_data = training_data.astype(type(np.inf))
     target_data = target_data.astype(type(np.inf))
 
@@ -60,22 +70,14 @@ def load_data():
     training_data = training_data[:5589][:]
     new_target_data = new_target_data[:5589][:]
 
-    print ('Training Data Shape = ', np.shape(training_data))
-    print ('Training Target Shape = ', np.shape(new_target_data))
-
-    print ('Test Data Shape = ', np.shape(test_data))
-    print ('Test Target Shape = ', np.shape(test_target_data))
-
     return training_data, new_target_data, test_data, test_target_data
 
 def build_mlp_classifier(training_data, target_data, test_data, test_target_data):
     print ('Building MLP Classifier .. ')
     #mlp = MLPClassifier(solver='lbfgs', max_iter=num_iter, validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(512, 256, 64, 6))
-    mlp = MLPClassifier(solver='adam', verbose=True, max_iter=num_iter, validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(1024, 512, 256, 128, 6))
+    mlp = MLPClassifier(solver='sgd', verbose=True, max_iter=num_iter, validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(1024, 512, 256, 128, 6))
     print ('Training Data Shape = ', np.shape(training_data))
     print ('Target Data Shape = ', np.shape(target_data))
-
-    # print ('Number of Outputs = ', mlp.n_outputs)
 
     mlp.fit(training_data, target_data)
     print ('Built Classifier .. ')
@@ -83,49 +85,19 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
     print ('Training Data Predictions ... ')
     print ('----------------------------- ')
 
-    predictions = mlp.predict_proba(training_data)
-    i = range(len(training_data))
-
-    #print ('Number of Outputs = ', mlp.n_outputs)
-
-    weights = mlp.get_params()
-    print ('Weights Shape = ', np.shape(weights))
-
-    print ('Predictions Shape = ', np.shape(predictions))
-
-    print ('\n\nBelow are the actual comparisons for the performance of the ANN versus the actual target values .. ')
-
-    correct_predictions = 0
-    incorrect_predictions = 0
-
-    print ('Shape of predictions = ', np.shape(predictions))
-
-    for j in i:
-        predicted_value = np.argmax(predictions[j])
-        target_value = np.argmax(target_data[j])
-        print (predictions[j], ' :: Prediction = ', predicted_value, ' Target = ', target_value)
-        if predicted_value == target_value:
-            correct_predictions = correct_predictions + 1
-        else:
-            incorrect_predictions = incorrect_predictions + 1
-
-    print ('Correct Predictions   = ', correct_predictions)
-    print ('Incorrect Predictions = ', incorrect_predictions)
-    print ('Score                 = ', mlp.score(training_data))
-    print ('---------------------------- ')
-    print ('\n\nTest Data Predictions ...    ')
-    print ('---------------------------- ')
-
     predictions = mlp.predict_proba(test_data)
     i = range(len(test_data))
-    print ('\n\nBelow are the actual comparisons for the performance of the ANN versus actual test target values .. ')
+
+    print ('Predictions Shape = ', np.shape(predictions))
+    print ('\n\nBelow are the actual comparisons for the performance of the ANN versus the actual target values .. ')
+
     correct_predictions = 0
     incorrect_predictions = 0
 
     for j in i:
         predicted_value = np.argmax(predictions[j])
         target_value = np.argmax(test_target_data[j])
-        print (predictions[j], ' :: Prediction = ', predicted_value, ' Target = ', target_value)
+        print predictions[j], ' :: Prediction = ', predicted_value, ' Target = ', target_value
         if predicted_value == target_value:
             correct_predictions = correct_predictions + 1
         else:
@@ -133,10 +105,6 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
 
     print ('Correct Predictions   = ', correct_predictions)
     print ('Incorrect Predictions = ', incorrect_predictions)
-    print ('Score                 = ', mlp.score(test_data))
-
-    #score = mlp.score(training_data, target_data)
-    # print ('Accuracy = ', score)
 
 def preprocess_training_data(training_data, target_data):
     training_data = training_data.astype(int)
@@ -224,14 +192,14 @@ def test(mlp):
 if __name__ == '__main__':
     print ('Executing MLP for Voxel Learning for LIDC .')
 
-    full_training = False
+    full_training = True
     max_batches = 2 
 
     if full_training:
         # Full Training Version
         print 'Running in Full Data Mode ..'
-        training_data, target_data = load_data()
-        build_mlp_classifier(training_data, target_data)
+        training_data, target_data, test_data, test_target_data = load_data_from_npz()
+        build_mlp_classifier(training_data, target_data, test_data, test_target_data)
     else:
         print 'Running in Batch Mode ..'
         # Batch Training Version
