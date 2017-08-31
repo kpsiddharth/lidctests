@@ -5,6 +5,7 @@ Created on Aug 23, 2017
 '''
 
 import numpy as np
+import sys
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 from sklearn.externals import joblib
@@ -18,10 +19,12 @@ target_data = []
 
 data_size = 6589
 num_classes = 6
-num_iter = 1000
+num_iter = 50 
+learning_rate = 0.001
 
 def load_data_from_npz():
     print 'Loading data from NPZ ..'
+    sys.stdout.flush()
     training_data_set = 'gen_data/full/train_data.npz'
     training_trgt_set = 'gen_data/full/train_targets_data.npz'
     test_data_set = 'gen_data/full/test_data.npz'
@@ -31,6 +34,9 @@ def load_data_from_npz():
     training_data = training_data['data']
     trn_trgt_data = np.load(training_trgt_set)
     trn_trgt_data = trn_trgt_data['data']
+
+    training_data = training_data[:3000, :]
+    trn_trgt_data = trn_trgt_data[:3000]
 
     test_data     = np.load(test_data_set)
     test_data     = test_data['data']
@@ -43,6 +49,7 @@ def load_data_from_npz():
 
 def load_data():
     print ('Loading Input Data ..')
+    sys.stdout.flush()
     training_data = np.loadtxt(train_data, delimiter = ',')
     target_data = np.loadtxt(result_data)
 
@@ -52,12 +59,13 @@ def load_data():
     new_target_data = np.zeros((data_size, num_classes))
 
     print ('Transforming truth data ..')
+    sys.stdout.flush()
     i = range(np.shape(target_data)[0] - 1)
     for j in i:
         new_target_data[j, target_data[j]] = 1
 
     print ('New Target Data = \n\n', new_target_data)
-
+    sys.stdout.flush()
     training_data = training_data.astype(type(np.inf))
     target_data = target_data.astype(type(np.inf))
 
@@ -74,23 +82,25 @@ def load_data():
 
 def build_mlp_classifier(training_data, target_data, test_data, test_target_data):
     print ('Building MLP Classifier .. ')
+    sys.stdout.flush()
     #mlp = MLPClassifier(solver='lbfgs', max_iter=num_iter, validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(512, 256, 64, 6))
-    mlp = MLPClassifier(solver='sgd', verbose=True, max_iter=num_iter, validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(1024, 512, 256, 128, 6))
+    mlp = MLPClassifier(solver='sgd', learning_rate_init = learning_rate, verbose=True, max_iter=num_iter, learning_rate='adaptive', validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(512, 256, 128, 6))
     print ('Training Data Shape = ', np.shape(training_data))
     print ('Target Data Shape = ', np.shape(target_data))
-
+    sys.stdout.flush()
     mlp.fit(training_data, target_data)
     print ('Built Classifier .. ')
+    sys.stdout.flush()
 
-    print ('Training Data Predictions ... ')
-    print ('----------------------------- ')
-
+    print ('Test Data Predictions ... ')
+    print ('------------------------- ')
+    sys.stdout.flush()
     predictions = mlp.predict_proba(test_data)
     i = range(len(test_data))
 
     print ('Predictions Shape = ', np.shape(predictions))
     print ('\n\nBelow are the actual comparisons for the performance of the ANN versus the actual target values .. ')
-
+    sys.stdout.flush()
     correct_predictions = 0
     incorrect_predictions = 0
 
@@ -105,18 +115,41 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
 
     print ('Correct Predictions   = ', correct_predictions)
     print ('Incorrect Predictions = ', incorrect_predictions)
+    sys.stdout.flush()
+
+    # Now test against the training data set to validate
+    print ('Training Data Predictions ...')
+    print ('-----------------------------')
+    predictions = mlp.predict_proba(training_data)
+    i = range(len(training_data))
+
+    print ('Predictions Shape = ', np.shape(predictions))
+    print ('\n\nBelow are the actual comparisons for the performance of the ANN versus the actual target values .. ')
+    sys.stdout.flush()
+    correct_predictions = 0
+    incorrect_predictions = 0
+
+    for j in i:
+        predicted_value = np.argmax(predictions[j])
+        target_value = np.argmax(target_data[j])
+        print predictions[j], ' :: Prediction = ', predicted_value, ' Target = ', target_value
+        if predicted_value == target_value:
+            correct_predictions = correct_predictions + 1
+        else:
+            incorrect_predictions = incorrect_predictions + 1
+
+    print ('Correct Predictions   = ', correct_predictions)
+    print ('Incorrect Predictions = ', incorrect_predictions)
+    sys.stdout.flush()
 
 def preprocess_training_data(training_data, target_data):
     training_data = training_data.astype(int)
     target_data = target_data.astype(int)
 
     new_target_data = np.zeros((np.shape(training_data)[0], num_classes))
-    print ('Transforming truth data ..')
     i = range(np.shape(target_data)[0] - 1)
     for j in i:
         new_target_data[j, target_data[j]] = 1
-
-    print ('New Target Data = \n\n', new_target_data)
 
     training_data = training_data.astype(type(np.inf))
     target_data = target_data.astype(type(np.inf))
@@ -142,6 +175,7 @@ def get_batch(batch_number, in_dir='gen_data/', in_file='databatch_', test_file 
         return True, data_array, targets_array
     except Exception as e:
         print 'Unable to load file for batch = ', batch_number, '  ', e.message
+        sys.stdout.flush()
         return False, None, None
 
 def train(upper_batch=1000, save = True):
@@ -153,7 +187,7 @@ def train(upper_batch=1000, save = True):
 
         print '---> Shape of Data Array   = ', np.shape(data_batch)
         print '---> Shape of Target Array = ', np.shape(targets_batch)
-
+        sys.stdout.flush()
         mlp.partial_fit(data_batch, targets_batch, classes=[0, 1, 2, 3, 4, 5])
         current_batch = current_batch + 1
         if current_batch <= upper_batch:
@@ -167,7 +201,7 @@ def train(upper_batch=1000, save = True):
 
         joblib.dump(mlp, 'gen_models/lidc_version_' + str(_timestamp) + '.pkl')
         print 'Successfully printed generated LIDC Model to gen_models directory .. '
-
+        sys.stdout.flush()
     return mlp
 
 def test(mlp):
@@ -185,13 +219,14 @@ def test(mlp):
 
     print 'Size of Test Data = ', np.shape(test_data)[0]
     print 'Size of Test Targets = ', np.shape(test_targets)[0]
-
+    sys.stdout.flush()
     score = mlp.score(test_data, test_targets)
     print '... Validation Accuracy = ', score
+    sys.stdout.flush()
 
 if __name__ == '__main__':
     print ('Executing MLP for Voxel Learning for LIDC .')
-
+    sys.stdout.flush()
     full_training = True
     max_batches = 2 
 
