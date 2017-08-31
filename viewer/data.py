@@ -9,8 +9,8 @@ annotations = pl.query(pl.Annotation)
 #annotations = annotations.filter(or_(pl.Annotation.scan_id == 17, pl.Annotation.scan_id == 27,pl.Annotation.scan_id == 10))
 
 #Counting Total annotation/Nodule
-#annotations_count = annotations.count()
-annotations_count = 1500
+annotations_count = annotations.count()
+# annotations_count = 1500
 
 #Creating numpy array for nodule data.
 #It will be used as training input data in CNN.
@@ -29,6 +29,7 @@ for count, annotation in enumerate(annotations):
         ann_vol, ann_seg = annotation.uniform_cubic_resample(side_length = 39)
         resampled_nodule_data[count] = ann_vol
         target_data[count] = annotation.malignancy
+        print 'Annotation [', count, '] Malignancy = ', target_data[count]
     except Exception as e:
         print  e.message, annotation.scan_id
 
@@ -47,5 +48,8 @@ resampled_nodule_data_in_2D = np.reshape(resampled_nodule_data,(annotations_coun
 resampled_nodule_data_in_2D_int8 = resampled_nodule_data_in_2D.astype(np.int8)
 
 #storing nodule data and target data in CSV format.
-np.savetxt("final_data_1.csv", resampled_nodule_data_in_2D_int8, delimiter=",")
-np.savetxt("target_data_1.csv", target_data, delimiter=",")
+#np.savetxt("final_data_1.csv", resampled_nodule_data_in_2D_int8, delimiter=",")
+#np.savetxt("target_data_1.csv", target_data, delimiter=",")
+
+np.savez('training_data.npz', data = resampled_nodule_data_in_2D)
+np.savez('training_targets.npz', data = target_data)
