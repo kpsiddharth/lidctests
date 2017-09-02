@@ -19,8 +19,32 @@ target_data = []
 
 data_size = 6589
 num_classes = 6
-num_iter = 50 
+num_iter = 1000
 learning_rate = 0.001
+
+def load_filtered_data_from_npz():
+    print 'Loading Filtered data from NPZ ..'
+    sys.stdout.flush()
+    training_trgt_set = 'gen_data/full/reclassed_encoded_targets.npz'
+    training_data_set = 'gen_data/full/scaled_data.npz'
+    #test_data_set = 'gen_data/full/test_data.npz'
+    #test_trgt_set = 'gen_data/full/test_targets_data.npz'
+
+    training_data = np.load(training_data_set)
+    training_data = training_data['data']
+    trn_trgt_data = np.load(training_trgt_set)
+    trn_trgt_data = trn_trgt_data['data']
+
+    test_data     = training_data[6000:, :]
+    test_trgt     = trn_trgt_data[6000:, :]
+
+    training_data = training_data[:6000, :]
+    trn_trgt_data = trn_trgt_data[:6000, :]
+
+    # training_data, trn_trgt_data = preprocess_training_data(training_data, trn_trgt_data)
+    # test_data, test_trgt = preprocess_training_data(test_data, test_trgt)
+    return training_data, trn_trgt_data, test_data, test_trgt
+
 
 def load_data_from_npz():
     print 'Loading data from NPZ ..'
@@ -54,8 +78,6 @@ def load_data():
     target_data = np.loadtxt(result_data)
 
     training_data = training_data.astype(int)
-    target_data = target_data.astype(int)
-
     new_target_data = np.zeros((data_size, num_classes))
 
     print ('Transforming truth data ..')
@@ -84,7 +106,7 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
     print ('Building MLP Classifier .. ')
     sys.stdout.flush()
     #mlp = MLPClassifier(solver='lbfgs', max_iter=num_iter, validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(512, 256, 64, 6))
-    mlp = MLPClassifier(solver='sgd', learning_rate_init = learning_rate, verbose=True, max_iter=num_iter, learning_rate='adaptive', validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(512, 256, 128, 6))
+    mlp = MLPClassifier(solver='lbfgs', learning_rate_init = learning_rate, verbose=True, max_iter=num_iter, learning_rate='adaptive', validation_fraction=0.1, alpha=1e-5, hidden_layer_sizes=(256, 256, 128, 3))
     print ('Training Data Shape = ', np.shape(training_data))
     print ('Target Data Shape = ', np.shape(target_data))
     sys.stdout.flush()
@@ -233,7 +255,7 @@ if __name__ == '__main__':
     if full_training:
         # Full Training Version
         print 'Running in Full Data Mode ..'
-        training_data, target_data, test_data, test_target_data = load_data_from_npz()
+        training_data, target_data, test_data, test_target_data = load_filtered_data_from_npz()
         build_mlp_classifier(training_data, target_data, test_data, test_target_data)
     else:
         print 'Running in Batch Mode ..'
