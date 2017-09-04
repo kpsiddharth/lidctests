@@ -21,7 +21,8 @@ resampled_nodule_data = np.zeros((annotations_count,uside_length,uside_length,us
 
 #Creating numpy array for maligancy of each nodule.
 #It will be used as target data in CNN.
-target_data = np.zeros((annotations_count, 4))
+target_data = np.zeros((annotations_count, 2))
+reclassified_target_data = np.zeros((annotations_count, 3))
 
 counter = 0
 
@@ -52,13 +53,14 @@ for count, annotation in enumerate(annotations):
         #print 'i = ', i
         #print '\n\nAnn Vol = ', np.shape(ann_vol)
         print counter, "---type---", type(annotation.malignancy),"annotation_malignancy", annotation.malignancy
+        target_data[counter][0] = annotation.malignancy
+        target_data[counter][1] = annotation.estimate_diameter()
         if annotation.malignancy < 3:
-            target_data[counter][0] = 1
+            reclassified_target_data[counter][0] = 1
         elif annotation.malignancy == 3:
-            target_data[counter][1] = 1
+            reclassified_target_data[counter][1] = 1
         else:
-            target_data[counter][2] = 1
-        target_data[counter][3] = annotation.estimate_diameter()
+            reclassified_target_data[counter][2] = 1
 
         counter = counter+1
         print ('Counter = ', counter)
@@ -70,6 +72,7 @@ for count, annotation in enumerate(annotations):
 
 resampled_nodule_data = resampled_nodule_data[:counter]
 target_data = target_data[:counter]
+reclassified_target_data = reclassified_target_data[:counter]
 print 'Resampled Array = ', np.shape(resampled_nodule_data)
 
 #Converting 4D nodule data into 2D.
@@ -91,4 +94,5 @@ scaled_training_data = (resampled_nodule_data_in_2D)/((np.amax(resampled_nodule_
 np.savez('unscaled_training_data.npz', data = resampled_nodule_data_in_2D)
 np.savez('training_data.npz', data = scaled_training_data)
 np.savez('training_targets.npz', data = target_data)
+np.savez('reclassified_training_targets.npz', data = reclassified_target_data)
 np.savez('bbox_sizes.npz', data = bbox_size)
