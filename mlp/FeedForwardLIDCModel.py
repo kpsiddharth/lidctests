@@ -19,27 +19,34 @@ target_data = []
 
 data_size = 6589
 num_classes = 6
-num_iter = 1000
+#num_iter = 1000
+num_iter = 2
 learning_rate = 0.001
 
 def load_filtered_data_from_npz():
     print 'Loading Filtered data from NPZ ..'
     sys.stdout.flush()
-    training_trgt_set = 'gen_data/full/reclassed_encoded_targets.npz'
-    training_data_set = 'gen_data/full/scaled_data.npz'
+    #training_trgt_set = 'gen_data/full/reclassed_encoded_targets.npz'
+    #training_data_set = 'gen_data/full/scaled_data.npz'
     #test_data_set = 'gen_data/full/test_data.npz'
     #test_trgt_set = 'gen_data/full/test_targets_data.npz'
+    training_trgt_set = '../viewer/reclassified_training_targets.npz'
+    training_data_set = '../viewer/training_data.npz'
 
     training_data = np.load(training_data_set)
     training_data = training_data['data']
     trn_trgt_data = np.load(training_trgt_set)
     trn_trgt_data = trn_trgt_data['data']
 
-    test_data     = training_data[6000:, :]
-    test_trgt     = trn_trgt_data[6000:, :]
+    data_size = np.shape(trn_trgt_data)[0]
+    testing_data_size = data_size/10
+    training_data_size = data_size - testing_data_size
 
-    training_data = training_data[:6000, :]
-    trn_trgt_data = trn_trgt_data[:6000, :]
+    test_data     = training_data[data_size - testing_data_size:, :]
+    test_trgt     = trn_trgt_data[data_size - testing_data_size:, :]
+
+    training_data = training_data[:data_size - testing_data_size, :]
+    trn_trgt_data = trn_trgt_data[:data_size - testing_data_size, :]
 
     # training_data, trn_trgt_data = preprocess_training_data(training_data, trn_trgt_data)
     # test_data, test_trgt = preprocess_training_data(test_data, test_trgt)
