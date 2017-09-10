@@ -134,7 +134,7 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
     incorrect_predictions = 0
 
     nclasses = np.shape(target_data)[1]
-    test_cm = np.zeros(nclasses,nclasses)
+    test_cm = np.zeros((nclasses,nclasses))
 
     for j in i:
         predicted_value = np.argmax(predictions[j])
@@ -146,7 +146,7 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
             incorrect_predictions = incorrect_predictions + 1
         test_cm[target_value][predicted_value] += 1
 
-    test_cm = test_cm/(test_cm.sum(axis = 1)*1.0)
+    test_cm = test_cm/(test_cm.sum(axis = 1, keepdims=True)*1.0)
     print "Test Confusion matrix"
     print test_cm
 
@@ -166,7 +166,7 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
     correct_predictions = 0
     incorrect_predictions = 0
 
-    train_cm = np.zeros(nclasses,nclasses)
+    train_cm = np.zeros((nclasses,nclasses))
 
     for j in i:
         predicted_value = np.argmax(predictions[j])
@@ -178,12 +178,13 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
             incorrect_predictions = incorrect_predictions + 1
         train_cm[target_value][predicted_value] += 1
 
-    train_cm = train_cm/(train_cm.sum(axis = 1)*1.0)
+    train_cm = train_cm/(train_cm.sum(axis = 1, keepdims=True)*1.0)
     print "Ttain Confusion matrix"
     print train_cm
 
     print ('Correct Predictions   = ', correct_predictions)
     print ('Incorrect Predictions = ', incorrect_predictions)
+    print "correct %age---", (correct_predictions*100.0)/(correct_predictions + incorrect_predictions)
     sys.stdout.flush()
 
 def preprocess_training_data(training_data, target_data):
