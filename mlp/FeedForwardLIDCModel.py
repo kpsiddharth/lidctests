@@ -19,8 +19,8 @@ target_data = []
 
 data_size = 6589
 num_classes = 6
-#num_iter = 1000
-num_iter = 2
+num_iter = 1000
+#num_iter = 2
 learning_rate = 0.001
 
 def load_filtered_data_from_npz():
@@ -133,6 +133,9 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
     correct_predictions = 0
     incorrect_predictions = 0
 
+    nclasses = np.shape(target_data)[1]
+    test_cm = np.zeros(nclasses,nclasses)
+
     for j in i:
         predicted_value = np.argmax(predictions[j])
         target_value = np.argmax(test_target_data[j])
@@ -141,6 +144,11 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
             correct_predictions = correct_predictions + 1
         else:
             incorrect_predictions = incorrect_predictions + 1
+        test_cm[target_value][predicted_value] += 1
+
+    test_cm = test_cm/(test_cm.sum(axis = 1)*1.0)
+    print "Test Confusion matrix"
+    print test_cm
 
     print ('Correct Predictions   = ', correct_predictions)
     print ('Incorrect Predictions = ', incorrect_predictions)
@@ -158,6 +166,8 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
     correct_predictions = 0
     incorrect_predictions = 0
 
+    train_cm = np.zeros(nclasses,nclasses)
+
     for j in i:
         predicted_value = np.argmax(predictions[j])
         target_value = np.argmax(target_data[j])
@@ -166,6 +176,11 @@ def build_mlp_classifier(training_data, target_data, test_data, test_target_data
             correct_predictions = correct_predictions + 1
         else:
             incorrect_predictions = incorrect_predictions + 1
+        train_cm[target_value][predicted_value] += 1
+
+    train_cm = train_cm/(train_cm.sum(axis = 1)*1.0)
+    print "Ttain Confusion matrix"
+    print train_cm
 
     print ('Correct Predictions   = ', correct_predictions)
     print ('Incorrect Predictions = ', incorrect_predictions)
