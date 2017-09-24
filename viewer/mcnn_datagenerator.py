@@ -1,6 +1,32 @@
 import numpy as np
 import pylidc as pl
 from sqlalchemy import or_
+from skimage import draw
+
+STANDARD_SHAPE = (32, 32)
+
+def create_mask(coordinates, shape = STANDARD_SHAPE):
+    '''
+    `coordinates` as represented in the Pylidc database for
+    outlining the boundary of individual nodules.
+    '''
+    coords = coordinates.split('\n')
+    coords_split = [c.split(',') for c in coords]
+    rows = [int(c[0]) for c in coords_split]
+    cols = [int(c[1]) for c in coords_split]
+
+    min_x = np.amin(rows)
+    min_y = np.amin(cols)
+    
+    rows = [r - min_x for r in rows]
+    cols = [c - min_y for c in cols]
+    
+    rows, cols = draw.polygon(rows, cols, shape)
+    
+    mask = np.zeros(shape, dtype = np.bool)
+    mask[rows, cols] = True
+    
+    return mask
 
 def get_middle_contours(contours):
     '''
@@ -56,7 +82,7 @@ for ann in annotations:
         if len(mid_contours) == 3:
             for contour in mid_contours:
                 ctr_coords = contour.to_matrix()
-                #print ('File Name = ', contour.dicom_file_name, ' \nCoords = ', ctr_coords)
+                # print ('File Name = ', contour.dicom_file_name, ' \nCoords = ', ctr_coords)
         else:
             print ('Skipping Annotation ', ann.id, ' as not enough contours found ..')
 
