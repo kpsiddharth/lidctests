@@ -40,13 +40,13 @@ def get_dicom_file_name_adjustments(file_name):
     file_name = file_name.rjust(10, '0')
     return file_name
 
-def get_middle_contours(contours, base_path):
+def get_middle_contours(contours, base_path, return_all=False):
     '''
     This function returns the middle 
     'n' contours from the set of available
     contours in the DB.
     '''
-    if True:
+    if return_all:
         return contours
     
     print ('Contours Available = ', len(contours))
@@ -111,7 +111,7 @@ for ann in annotations:
         qualified_ann_count += 1
         sorted_contours = sorted(contours, key=lambda c: c.image_z_position)
         base_path = scan.get_path_to_dicom_files(checkpath=False)
-        mid_contours = get_middle_contours(sorted_contours, base_path)
+        mid_contours = get_middle_contours(sorted_contours, base_path, return_all=True)
         if not (os.path.exists(base_path)):
             continue
         
@@ -167,22 +167,21 @@ for ann in annotations:
                 sh = np.shape(mask)
                 mask = np.reshape(mask, (sh[1], sh[2]))
                 for ind in mask:
-                    pixel_array[ind[0]][ind[1]] = 0
+                    pixel_array[ind[1]][ind[0]] = 0
 
                 side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
-                side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
                 
-                pylab.imshow(ds.pixel_array, cmap=pylab.cm.bone)
+                pylab.imshow(side_by_side, cmap=pylab.cm.bone)
                 
                 print ('File = ', file_path)
                 print ('Contour Id = ', contour.id)
                 print ('Annotation = ', ann.id)
                 print ('Z Index = ', contour.image_z_position)
                 
-                # red_rows = [512 + x for x in ctr_coords[:,0]]
-                red_rows = ctr_coords[:,0]
-                red_cols = ctr_coords[:,1]
-                pylab.plot(red_cols, red_rows, 'r')
+                red_rows = [512 + x for x in ctr_coords[:, 0]]
+                # red_rows = ctr_coords[:,0]
+                red_cols = ctr_coords[:, 1]
+                pylab.plot(red_rows, red_cols, 'r')
                 
                 pylab.show()
         else:
