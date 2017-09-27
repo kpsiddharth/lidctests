@@ -100,6 +100,8 @@ max_yrange = 0
 min_xrange = 100000
 min_yrange = 100000
 
+training_data = []
+
 for ann in annotations:
     ann_id = str(ann.id)
     ann_id = ann_id.rjust(8, ' ')
@@ -121,6 +123,7 @@ for ann in annotations:
             continue
         
         if len(mid_contours) >= 3:
+            slices = []
             # Once we have all the contours, we will recreate
             # masks and then apply them to original DICOM images
             for contour in mid_contours:
@@ -178,27 +181,24 @@ for ann in annotations:
                 
                 pylab.imshow(side_by_side, cmap=pylab.cm.bone)
                 
-                print ('File = ', file_path)
-                print ('Contour Id = ', contour.id)
-                print ('Annotation = ', ann.id)
-                print ('Z Index = ', contour.image_z_position)
-                
                 red_rows = [512 + x for x in ctr_coords[:, 0]]
                 # red_rows = ctr_coords[:,0]
                 red_cols = ctr_coords[:, 1]
-                pylab.plot(red_rows, red_cols, 'r')
+                #pylab.plot(red_rows, red_cols, 'r')
                 
-                pylab.show()
+                #pylab.show()
                 
                 extracted_image = extract_image(pixel_array, xcentroid, ycentroid)
-                pylab.imshow(extracted_image, cmap=pylab.cm.bone)
-                pylab.show()
+                #pylab.imshow(extracted_image, cmap=pylab.cm.bone)
+                #pylab.show()
+                slices.append(extracted_image)
+                
+            print ('Adding Training Data for Annotation ID = ' + str(ann.id))
+            training_data.append(slices)
         else:
             print ('Skipping Annotation ', ann.id, ' as not enough contours found ..')
 
-print ('Maximum X Range = %d, Y Range = %d', max_xrange, max_yrange)
-print ('Minimum X Range = %d, Y Range = %d', min_xrange, min_yrange)
-
-
 print ('Total Annotations = ', annotations_count)
 print ('Qualified Annotations = ', qualified_ann_count)
+
+print ('Full Data Size = ' + str(training_data.shape))
