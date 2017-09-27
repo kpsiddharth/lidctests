@@ -13,6 +13,8 @@ DICOM_PATH = ''
 # be needed to build the mask.
 STANDARD_SHAPE = (512, 512)
 
+EXTRACT_SIZE = 25
+
 def create_mask(coordinates, shape=STANDARD_SHAPE):
     '''
     `coordinates` as represented in the Pylidc database for
@@ -23,12 +25,6 @@ def create_mask(coordinates, shape=STANDARD_SHAPE):
     rows = [int(c[0]) for c in coords_split]
     cols = [int(c[1]) for c in coords_split]
 
-    # min_x = np.amin(rows)
-    # min_y = np.amin(cols)
-    
-    # rows = [r - min_x for r in rows]
-    # cols = [c - min_y for c in cols]
-    
     rows, cols = draw.polygon(rows, cols, shape)
     
     mask = np.zeros(shape, dtype=np.bool)
@@ -39,6 +35,15 @@ def create_mask(coordinates, shape=STANDARD_SHAPE):
 def get_dicom_file_name_adjustments(file_name):
     file_name = file_name.rjust(10, '0')
     return file_name
+
+def extract_image(image, mid_x, mid_y):
+    '''
+    image: 2-D array representing the slice
+    mid_x, mid_y: Mid point of the image
+    '''
+    print (image[math.floor(mid_x) - EXTRACT_SIZE:math.floor(mid_x) + EXTRACT_SIZE + 1, math.floor(mid_y) - EXTRACT_SIZE:math.floor(mid_y) + EXTRACT_SIZE + 1])
+    extracted_image = image[math.floor(mid_y) - EXTRACT_SIZE:math.floor(mid_y) + EXTRACT_SIZE + 1, math.floor(mid_x) - EXTRACT_SIZE:math.floor(mid_x) + EXTRACT_SIZE + 1]
+    return extracted_image
 
 def get_middle_contours(contours, base_path, return_all=False):
     '''
@@ -183,6 +188,10 @@ for ann in annotations:
                 red_cols = ctr_coords[:, 1]
                 pylab.plot(red_rows, red_cols, 'r')
                 
+                pylab.show()
+                
+                extracted_image = extract_image(pixel_array, xcentroid, ycentroid)
+                pylab.imshow(extracted_image, cmap=pylab.cm.bone)
                 pylab.show()
         else:
             print ('Skipping Annotation ', ann.id, ' as not enough contours found ..')
