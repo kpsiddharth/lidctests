@@ -3,7 +3,7 @@ import pylidc as pl
 from sqlalchemy import or_
 from skimage import draw
 
-STANDARD_SHAPE = (32, 32)
+STANDARD_SHAPE = (512, 512)
 
 def create_mask(coordinates, shape = STANDARD_SHAPE):
     '''
@@ -15,18 +15,18 @@ def create_mask(coordinates, shape = STANDARD_SHAPE):
     rows = [int(c[0]) for c in coords_split]
     cols = [int(c[1]) for c in coords_split]
 
-    min_x = np.amin(rows)
-    min_y = np.amin(cols)
+    #min_x = np.amin(rows)
+    #min_y = np.amin(cols)
     
-    rows = [r - min_x for r in rows]
-    cols = [c - min_y for c in cols]
+    #rows = [r - min_x for r in rows]
+    #cols = [c - min_y for c in cols]
     
     rows, cols = draw.polygon(rows, cols, shape)
     
     mask = np.zeros(shape, dtype = np.bool)
     mask[rows, cols] = True
     
-    return mask
+    return mask, rows, cols
 
 def get_middle_contours(contours):
     '''
