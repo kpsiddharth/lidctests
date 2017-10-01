@@ -4,7 +4,7 @@ import dicom
 from sqlalchemy import or_
 from skimage import draw
 import math, os, sys
-import pylab
+#import pylab
 
 # Path to DICOM images
 DICOM_PATH = ''
@@ -41,8 +41,7 @@ def extract_image(image, mid_x, mid_y):
     image: 2-D array representing the slice
     mid_x, mid_y: Mid point of the image
     '''
-    print (image[math.floor(mid_x) - EXTRACT_SIZE:math.floor(mid_x) + EXTRACT_SIZE + 1, math.floor(mid_y) - EXTRACT_SIZE:math.floor(mid_y) + EXTRACT_SIZE + 1])
-    extracted_image = image[math.floor(mid_y) - EXTRACT_SIZE:math.floor(mid_y) + EXTRACT_SIZE + 1, math.floor(mid_x) - EXTRACT_SIZE:math.floor(mid_x) + EXTRACT_SIZE + 1]
+    extracted_image = image[int(math.floor(mid_y)) - EXTRACT_SIZE:int(math.floor(mid_y)) + EXTRACT_SIZE + 1, int(math.floor(mid_x)) - EXTRACT_SIZE:int(math.floor(mid_x)) + EXTRACT_SIZE + 1]
     return extracted_image
 
 def get_middle_contours(contours, base_path, return_all=False):
@@ -54,7 +53,7 @@ def get_middle_contours(contours, base_path, return_all=False):
     if return_all:
         return contours
     
-    print ('Contours Available = ', len(contours))
+    # print ('Contours Available = ', len(contours))
     
     incl_contours = []
     for c in contours:
@@ -90,7 +89,11 @@ def get_middle_contours(contours, base_path, return_all=False):
     
     return mid_contours
 
-annotations = pl.query(pl.Annotation).filter(pl.Annotation.id == 39)
+from sqlalchemy import and_
+
+# annotations = pl.query(pl.Annotation).filter(and_(pl.Annotation.id >= 4640, pl.Annotation.id <= 4641))
+# Fetch and process all the annotation data there is in the system
+annotations = pl.query(pl.Annotation)
 annotations_count = annotations.count()
 
 qualified_ann_count = 0
@@ -101,15 +104,16 @@ min_xrange = 100000
 min_yrange = 100000
 
 training_data = []
+target_data = []
 
 for ann in annotations:
     ann_id = str(ann.id)
     ann_id = ann_id.rjust(8, ' ')
     sys.stdout.flush()
-    print ('Processing Annotation ID = ' + ann_id)
+    # print ('Processing Annotation ID = ' + ann_id)
     scan = ann.scan
     contours = ann.contours
-    
+
     if len(contours) > 2:
         '''
         These are the annotations that should figure in the final 
@@ -118,7 +122,7 @@ for ann in annotations:
         qualified_ann_count += 1
         sorted_contours = sorted(contours, key=lambda c: c.image_z_position)
         base_path = scan.get_path_to_dicom_files(checkpath=False)
-        mid_contours = get_middle_contours(sorted_contours, base_path, return_all=True)
+        mid_contours = get_middle_contours(sorted_contours, base_path, return_all=False)
         if not (os.path.exists(base_path)):
             continue
         
@@ -179,7 +183,7 @@ for ann in annotations:
 
                 side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
                 
-                pylab.imshow(side_by_side, cmap=pylab.cm.bone)
+                #pylab.imshow(side_by_side, cmap=pylab.cm.bone)
                 
                 red_rows = [512 + x for x in ctr_coords[:, 0]]
                 # red_rows = ctr_coords[:,0]
@@ -189,16 +193,54 @@ for ann in annotations:
                 #pylab.show()
                 
                 extracted_image = extract_image(pixel_array, xcentroid, ycentroid)
+                x_dim = extracted_image.shape[0]
+                y_dim = extracted_image.shape[1]
+
+                x_diff = 0
+                y_diff = 0
+
+                if x_dim < 51:
+                    x_diff = 51 - x_dim
+                
+                if y_dim < 51:
+                    y_diff = 51 - y_dim
+                
+                shape_padding = ((0, x_diff), (0, y_diff))
+                # print ('Shape Padding = ' + str(shape_padding))
+                extracted_image_2 = np.pad(extracted_image, shape_padding, mode='constant', constant_values = 0)
+
+                if extracted_image_2.shape == extracted_image.shape:
+                    equality = (extracted_image_2 == extracted_image)
+                    indices = np.where(equality == False)
+                    print ('Annotation ID = ' + str(ann.id) + '  .. Unequal = ' + str(indices))
+
                 #pylab.imshow(extracted_image, cmap=pylab.cm.bone)
                 #pylab.show()
-                slices.append(extracted_image)
+                slices.append(extracted_image_2)
                 
             print ('Adding Training Data for Annotation ID = ' + str(ann.id))
-            training_data.append(slices)
+            if ann.malignancy == 1 or ann.malignancy == 2:
+                target_data.append(np.asarray([1,0,0]))
+                training_data.append(slices)
+            elif ann.malignancy == 3:
+                target_data.append(np.asarray([0,1,0]))
+                training_data.append(slices)
+            elif ann.malignancy == 4 or ann.malignancy == 5:
+                target_data.append(np.asarray([0,0,1]))
+                training_data.append(slices)
+            else:
+                print ('Unrecognized Output data')
         else:
             print ('Skipping Annotation ', ann.id, ' as not enough contours found ..')
 
 print ('Total Annotations = ', annotations_count)
 print ('Qualified Annotations = ', qualified_ann_count)
 
-print ('Full Data Size = ' + str(training_data.shape))
+training_data_array = np.asarray(training_data)
+target_data_array = np.asarray(target_data)
+
+print ('Full Data Size = ' + str(training_data_array.shape))
+print ('Full Target Data Size = ' + str(target_data_array.shape))
+
+np.savez('../data/2809/unscaled_training_data_range.npz', data = training_data_array)
+np.savez('../data/2809/target_data_range.npz', data = target_data_array)
