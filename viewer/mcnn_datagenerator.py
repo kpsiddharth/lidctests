@@ -10,6 +10,9 @@ STANDARD_SHAPE = (512, 512)
 # Path to DICOM images
 DICOM_PATH = ''
 
+MIN_CONTOURS = 0 
+MIN_CNN_VIEW_COUNT = 1
+
 # Standard CT scan size. This will
 # be needed to build the mask.
 STANDARD_SHAPE = (512, 512)
@@ -121,7 +124,7 @@ for ann in annotations:
     scan = ann.scan
     contours = ann.contours
 
-    if len(contours) > 2:
+    if len(contours) > MIN_CONTOURS:
         '''
         These are the annotations that should figure in the final 
         generated data for training and testing of the model.
@@ -129,11 +132,11 @@ for ann in annotations:
         qualified_ann_count += 1
         sorted_contours = sorted(contours, key=lambda c: c.image_z_position)
         base_path = scan.get_path_to_dicom_files(checkpath=False)
-        mid_contours = get_middle_contours(sorted_contours, base_path, return_all=False)
+        mid_contours = get_middle_contours(sorted_contours, base_path, return_all=True)
         if not (os.path.exists(base_path)):
             continue
         
-        if len(mid_contours) >= 3:
+        if len(mid_contours) >= MIN_CNN_VIEW_COUNT:
             slices = []
             # Once we have all the contours, we will recreate
             # masks and then apply them to original DICOM images
@@ -168,7 +171,7 @@ for ann in annotations:
                 xcentroid = (xmin + xmax) / 2
                 ycentroid = (ymin + ymax) / 2
                 
-                mask = create_mask(contour.coords)
+                mask, r, c = create_mask(contour.coords)
                 file_name = contour.dicom_file_name
                 
                 # Adjust the filename to fit to the LIDC 
@@ -178,6 +181,10 @@ for ann in annotations:
                 # Now building the file path to load the 
                 # DCM image and do the needful processing
                 file_path = base_path + '/' + file_name
+                if not os.path.exists(file_path):
+                    print ('File not found: ' + file_path)
+                    continue
+
                 ds = dicom.read_file(file_path)
                 pixel_array = np.copy(ds.pixel_array)
 
@@ -249,5 +256,5 @@ target_data_array = np.asarray(target_data)
 print ('Full Data Size = ' + str(training_data_array.shape))
 print ('Full Target Data Size = ' + str(target_data_array.shape))
 
-np.savez('../data/2809/unscaled_training_data_range.npz', data = training_data_array)
-np.savez('../data/2809/target_data_range.npz', data = target_data_array)
+np.savez('../data/0410/unscaled_training_data_range.npz', data = training_data_array)
+np.savez('../data/0410/target_data_range.npz', data = target_data_array)
