@@ -30,11 +30,11 @@ def create_mask(coordinates, shape=STANDARD_SHAPE):
     rows = [int(c[0]) for c in coords_split]
     cols = [int(c[1]) for c in coords_split]
 
-    #min_x = np.amin(rows)
-    #min_y = np.amin(cols)
+    # min_x = np.amin(rows)
+    # min_y = np.amin(cols)
     
-    #rows = [r - min_x for r in rows]
-    #cols = [c - min_y for c in cols]
+    # rows = [r - min_x for r in rows]
+    # cols = [c - min_y for c in cols]
     
     rows, cols = draw.polygon(rows, cols, shape)
     
@@ -211,18 +211,18 @@ for ann in annotations:
                     pixel_array[ind[1]][ind[0]] = 0
 
                 side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
-                #pylab.imshow(side_by_side, cmap=pylab.cm.bone)
+                # pylab.imshow(side_by_side, cmap=pylab.cm.bone)
                 
                 red_rows = [512 + x for x in ctr_coords[:, 0]]
-                red_rows = ctr_coords[:,0]
+                red_rows = ctr_coords[:, 0]
                 red_cols = ctr_coords[:, 1]
-                #pylab.plot(red_rows, red_cols, 'r')
+                # pylab.plot(red_rows, red_cols, 'r')
                 
-                #pylab.show()
+                # pylab.show()
                 
-                #extracted_image = extract_image(pixel_array, xcentroid, ycentroid)
-                #pylab.imshow(extracted_image, cmap=pylab.cm.bone)
-                #pylab.show()
+                # extracted_image = extract_image(pixel_array, xcentroid, ycentroid)
+                # pylab.imshow(extracted_image, cmap=pylab.cm.bone)
+                # pylab.show()
 
                 try:
                     extracted_image = extract_tight_image(pixel_array, xcentroid, ycentroid, xmin, ymin, xmax, ymax)
@@ -230,8 +230,8 @@ for ann in annotations:
                     print ('Exception occurred while extracting image = ' + e.message)
                     continue
                 
-                #pylab.imshow(extracted_image, cmap=pylab.cm.bone)
-                #pylab.show()
+                # pylab.imshow(extracted_image, cmap=pylab.cm.bone)
+                # pylab.show()
                 
                 x_dim = extracted_image.shape[0]
                 y_dim = extracted_image.shape[1]
@@ -245,29 +245,31 @@ for ann in annotations:
                 if y_dim < 51:
                     y_diff = 51 - y_dim
                 
-                shape_padding = ((0, x_diff), (0, y_diff))
+                # shape_padding = ((0, x_diff), (0, y_diff))
                 # print ('Shape Padding = ' + str(shape_padding))
-                extracted_image_2 = np.pad(extracted_image, shape_padding, mode='constant', constant_values = 0)
+                # extracted_image_2 = np.pad(extracted_image, shape_padding, mode='constant', constant_values = 0)
 
-                if extracted_image_2.shape == extracted_image.shape:
-                    equality = (extracted_image_2 == extracted_image)
-                    indices = np.where(equality == False)
-                    print ('Annotation ID = ' + str(ann.id) + '  .. Unequal = ' + str(indices))
+                # if extracted_image_2.shape == extracted_image.shape:
+                #    equality = (extracted_image_2 == extracted_image)
+                #    indices = np.where(equality == False)
+                #    print ('Annotation ID = ' + str(ann.id) + '  .. Unequal = ' + str(indices))
 
-                #pylab.imshow(extracted_image, cmap=pylab.cm.bone)
-                #pylab.show()
-                #slices.append(extracted_image_2)
-                training_data.append(extracted_image)
+                # pylab.imshow(extracted_image, cmap=pylab.cm.bone)
+                # pylab.show()
+                slices.append(extracted_image)
 
-                print ('Adding Training Data for Annotation ID = ' + str(ann.id))
-                if ann.malignancy == 1 or ann.malignancy == 2:
-                    target_data.append(np.asarray([1,0,0]))
-                elif ann.malignancy == 3:
-                    target_data.append(np.asarray([0,1,0]))
-                elif ann.malignancy == 4 or ann.malignancy == 5:
-                    target_data.append(np.asarray([0,0,1]))
-                else:
-                    print ('Unrecognized Output data')
+            print ('Adding Training Data for Annotation ID = ' + str(ann.id) + ' -- Number of slices = ' + str(len(slices) + ' ; Malignancy = ' + str(ann.malignancy)))
+            if ann.malignancy == 1 or ann.malignancy == 2:
+                target_data.append(np.asarray([1, 0, 0]))
+                training_data.append(slices)
+            elif ann.malignancy == 3:
+                target_data.append(np.asarray([0, 1, 0]))
+                training_data.append(slices)
+            elif ann.malignancy == 4 or ann.malignancy == 5:
+                target_data.append(np.asarray([0, 0, 1]))
+                training_data.append(slices)
+            else:
+                print ('Unrecognized Output data')
         else:
             print ('Skipping Annotation ', ann.id, ' as not enough contours found ..')
 
@@ -280,5 +282,5 @@ target_data_array = np.asarray(target_data)
 print ('Full Data Size = ' + str(training_data_array.shape))
 print ('Full Target Data Size = ' + str(target_data_array.shape))
 
-np.savez('../data/0410/unscaled_training_data_range.npz', data = training_data_array)
-np.savez('../data/0410/target_data_range.npz', data = target_data_array)
+#np.savez('../data/0410/unscaled_training_data_range.npz', data=training_data_array)
+#np.savez('../data/0410/target_data_range.npz', data=target_data_array)
