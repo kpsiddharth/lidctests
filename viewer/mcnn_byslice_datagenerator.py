@@ -4,7 +4,8 @@ import dicom
 from sqlalchemy import or_
 from skimage import draw
 import math, os, sys
-#import pylab
+import pylab
+import scipy
 
 STANDARD_SHAPE = (512, 512)
 # Path to DICOM images
@@ -54,6 +55,16 @@ def extract_image(image, mid_x, mid_y):
     extracted_image = image[int(math.floor(mid_y)) - EXTRACT_SIZE:int(math.floor(mid_y)) + EXTRACT_SIZE + 1, int(math.floor(mid_x)) - EXTRACT_SIZE:int(math.floor(mid_x)) + EXTRACT_SIZE + 1]
     return extracted_image
 
+
+def extract_tight_image(image, mid_x, mid_y, min_x, min_y, max_x, max_y):
+    '''
+    image: 2-D array representing the slice
+    mid_x, mid_y: Mid point of the image
+    '''
+    extracted_image = image[int(math.floor(min_y)):int(math.floor(max_y)), int(math.floor(min_x)):int(math.floor(max_x))]
+    extracted_image = scipy.misc.imresize(extracted_image, (32, 32))
+    return extracted_image
+
 def get_middle_contours(contours, base_path, return_all=False):
     '''
     This function returns the middle 
@@ -101,10 +112,10 @@ def get_middle_contours(contours, base_path, return_all=False):
 
 from sqlalchemy import and_
 
-# annotations = pl.query(pl.Annotation).filter(and_(pl.Annotation.id >= 4640, pl.Annotation.id <= 4641))
+annotations = pl.query(pl.Annotation).filter(and_(pl.Annotation.id >= 39, pl.Annotation.id <= 39))
 # Fetch and process all the annotation data there is in the system
 annotations = pl.query(pl.Annotation)
-annotations_count = annotations.count()
+#  annotations_count = annotations.count()
 
 qualified_ann_count = 0
 
@@ -196,17 +207,23 @@ for ann in annotations:
                     pixel_array[ind[1]][ind[0]] = 0
 
                 side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
-                
                 #pylab.imshow(side_by_side, cmap=pylab.cm.bone)
                 
                 red_rows = [512 + x for x in ctr_coords[:, 0]]
-                # red_rows = ctr_coords[:,0]
+                red_rows = ctr_coords[:,0]
                 red_cols = ctr_coords[:, 1]
-                #pylab.plot(red_rows, red_cols, 'r')
+                pylab.plot(red_rows, red_cols, 'r')
                 
                 #pylab.show()
                 
                 extracted_image = extract_image(pixel_array, xcentroid, ycentroid)
+                pylab.imshow(extracted_image, cmap=pylab.cm.bone)
+                pylab.show()
+
+                extracted_image = extract_tight_image(pixel_array, xcentroid, ycentroid, xmin, ymin, xmax, ymax)
+                pylab.imshow(extracted_image, cmap=pylab.cm.bone)
+                pylab.show()
+                
                 x_dim = extracted_image.shape[0]
                 y_dim = extracted_image.shape[1]
 
