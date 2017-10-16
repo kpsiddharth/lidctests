@@ -48,14 +48,12 @@ def max_pool_1x3(x):
 def resize_input_image(x):
     # Below is creating a 4D tensor to be used to
     # train the model.
-    x_image = tf.reshape(x, [-1, 32, 32, 1])
-    return x_image
+    x_image = tf.reshape(x, [-1, 3, 32, 32])
+    return x_image[-1, 0, 32, 32], x_image[-1, 1, 32, 32], x_image[-1, 2, 32, 32]
 
 
 # Inputs: 3 Adjacent layers
-x1 = tf.placeholder(tf.float32, shape=[None, 1024])
-x2 = tf.placeholder(tf.float32, shape=[None, 1024])
-x3 = tf.placeholder(tf.float32, shape=[None, 1024])
+x = tf.placeholder(tf.float32, shape=[None, 3, 32, 32])
 
 # Output
 y_ = tf.placeholder(tf.float32, shape=[None, 2])
@@ -67,9 +65,7 @@ W_conv1 = weight_variable([3, 3, 1, 32])
 # Single bias tensor per kernel
 b_conv1 = bias_variable([32])
 
-x_image1 = resize_input_image(x1)
-x_image2 = resize_input_image(x2)
-x_image3 = resize_input_image(x3)
+x_image1, x_image2, x_image3 = resize_input_image(x)
 
 # CNN1 for Image 1
 h_conv1_1 = tf.nn.relu(conv2d(x_image1, W_conv1) + b_conv1)
@@ -180,19 +176,19 @@ dataset = DataSet()
 
 with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
-    for i in range(5000):
+    for i in range(500):
         batch = dataset.next_batch(128)
         if i % 100 == 0 or True:
             train_accuracy = accuracy.eval(feed_dict={
-                x1: batch[0], x2: batch[1], x3: batch[2], y_: batch[1], keep_prob: 1.0, keep_prob_2: 1.0})
+                x: batch[0], y_: batch[1], keep_prob: 1.0, keep_prob_2: 1.0})
             print('step %d, training accuracy %g' % (i, train_accuracy))
         if i % 1000 == 0:
             train_accuracy = accuracy.eval(feed_dict={
-                x1: dataset.test_images1, x2: dataset.test_images2, x3: dataset.test_images3, y_: dataset.test_labels, keep_prob: 1.0, keep_prob_2: 1.0})
+                x: dataset.test_images1, y_: dataset.test_labels, keep_prob: 1.0, keep_prob_2: 1.0})
             print ('Milestone Step Accuracy = %g' % (train_accuracy))
 
-        train_step.run(feed_dict={x1: batch[0], x2: batch[1], x3: batch[2], y_: batch[1], keep_prob: 0.5, keep_prob_2: 0.5})
+        train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5, keep_prob_2: 0.5})
    
     print('test accuracy %g' % accuracy.eval(feed_dict={
-        x1: dataset.test_images1, x2: dataset.test_images2, x3: dataset.test_images3, y_: dataset.test_labels, keep_prob: 1.0, keep_prob_2: 1.0}))
+        x: dataset.test_images1, y_: dataset.test_labels, keep_prob: 1.0, keep_prob_2: 1.0}))
     
