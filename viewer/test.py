@@ -14,6 +14,7 @@ scans = pl.query(pl.Scan)
 
 STANDARD_SHAPE = (512, 512)
 EXTRACT_SIZE = 14
+PATCH_DIM = 28
 
 to_be_added = []
 
@@ -43,7 +44,7 @@ def extract_image(image, mid_x, mid_y, min_x, min_y, max_x, max_y):
     image: 2-D array representing the slice
     mid_x, mid_y: Mid point of the image
     '''
-    extracted_image = image[int(min_y):int(max_y + 1), int(min_x):int(max_x + 1)]
+    extracted_image = image[int(min_y - 1):int(max_y + 1), int(min_x - 1):int(max_x + 1)]
     xrange = max_x - min_x + 1
     yrange = max_y - min_y + 1
     
@@ -51,17 +52,15 @@ def extract_image(image, mid_x, mid_y, min_x, min_y, max_x, max_y):
     min_size = 28
     if bigger > min_size:
         if axis == 0:
-            new_xsize = int((float(min_size)/float(bigger)) * float(smaller))
+            new_xsize = int((float(min_size) / float(bigger)) * float(smaller))
             new_ysize = min_size
         else:
             new_xsize = min_size
-            new_ysize = int((float(min_size)/float(bigger)) * float(smaller))
+            new_ysize = int((float(min_size) / float(bigger)) * float(smaller))
             
         print ('Newly determined size = ' + str(new_ysize) + ',' + str(new_xsize))
     
-        extracted_image2 = resize(extracted_image, (new_ysize, new_xsize))
-        
-        extracted_image = extracted_image2
+        extracted_image = resize(extracted_image, (new_ysize, new_xsize))
     
     return extracted_image
 
@@ -111,12 +110,34 @@ def construct_patch_from_contour(ann, contour):
     red_cols = ctr_coords[:, 1]
     pylab.plot(red_rows, red_cols, 'r')
 
-    #side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
-    #pylab.imshow(side_by_side, cmap=pylab.cm.bone)
-    #pylab.show()
+    # side_by_side = np.concatenate((pixel_array, ds.pixel_array), axis=1)
+    # pylab.imshow(side_by_side, cmap=pylab.cm.bone)
+    # pylab.show()
 
     extracted_image = extract_image(pixel_array, xcentroid, ycentroid, xmin, ymin, xmax, ymax)
-    return extracted_image
+    
+    dimy = extracted_image.shape[0]
+    dimx = extracted_image.shape[1]
+    
+    diffy = PATCH_DIM - dimy
+    diffx = PATCH_DIM - dimx
+    
+    diffy = diffy if diffy > 0 else 0
+    diffx = diffx if diffx > 0 else 0
+    
+    shape_padding = ((0, diffy), (0, diffx))
+    extracted_image_padded = np.pad(extracted_image, shape_padding, mode='constant', constant_values=0)
+    
+    rolly = int(float(extracted_image.shape[0] - extracted_image_padded.shape[0]) / float(2))
+    rollx = int(float(extracted_image.shape[1] - extracted_image_padded.shape[1]) / float(2))
+    
+    extracted_image_rolled_y = np.roll(extracted_image_padded, -rolly, axis=0)
+    extracted_image_rolled_x = np.roll(extracted_image_padded, -rollx, axis=1)
+
+    extracted_image_rolled = np.roll(extracted_image_padded, -rollx, axis=1)
+    extracted_image_rolled = np.roll(extracted_image_rolled, -rolly, axis=0)
+    
+    return extracted_image_padded, extracted_image_rolled_x, extracted_image_rolled_y, extracted_image_rolled
 
 def get_malignancy(level):
     if level == 1 or level == 2:
@@ -156,7 +177,7 @@ if not load_annotations:
                     print ('Accepting Annotation .. ' + str(cluster[0].id))
                     to_be_added.append(cluster[0])
                 else:
-                    print ('Discarding Annotations = ' + str(cluster[0]))
+                    # print ('Discarding Annotations = ' + str(cluster[0]))
                     pass
     
     print ('Total Annotations = ' + str(len(to_be_added)))
@@ -170,10 +191,21 @@ for ann in annotations:
     for c in contours:
         print (type(c))
         try:
-            print ('Displaying Contour ID = ' + str(c.id))
-            patch = construct_patch_from_contour(ann, c)
-            patches.append(patch)
-            pylab.imshow(patch, cmap=pylab.cm.bone)
+            patch1, patch2, patch3, patch4 = construct_patch_from_contour(ann, c)
+            patches.append(patch1)
+            pylab.imshow(patch1, cmap=pylab.cm.bone)
+            pylab.show()
+
+            patches.append(patch2)
+            pylab.imshow(patch2, cmap=pylab.cm.bone)
+            pylab.show()
+
+            patches.append(patch3)
+            pylab.imshow(patch3, cmap=pylab.cm.bone)
+            pylab.show()
+
+            patches.append(patch4)
+            pylab.imshow(patch4, cmap=pylab.cm.bone)
             pylab.show()
         except Exception as e:
             pass
