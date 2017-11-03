@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import mnist, input_data
+#from tensorflow.examples.tutorials.mnist import mnist, input_data
 from datasource.lidc_mcnn import DataSet
 
 
@@ -113,16 +113,17 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 # mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 dataset = DataSet()
 
-with tf.Session() as sess:
+with tf.Session(config=tf.ConfigProto(log_device_placement=False)) as sess:
     sess.run(tf.global_variables_initializer())
-    for i in range(100):
-        batch = dataset.next_batch(64)
-        if i % 100 == 0 or True:
-            train_accuracy = accuracy.eval(feed_dict={
-                x: batch[0], y_: batch[1]})
-            print('step %d, training accuracy %g' % (i, train_accuracy))
-        train_step.run(feed_dict={x: batch[0], y_: batch[1]})
+    with tf.device("/gpu:2"):
+        for i in range(2000):
+            batch = dataset.next_batch(32)
+            if i % 100 == 0:
+                train_accuracy = accuracy.eval(feed_dict={
+                    x: batch[0], y_: batch[1]})
+                print('step %d, training accuracy %g' % (i, train_accuracy))
+            train_step.run(feed_dict={x: batch[0], y_: batch[1]})
    
-    print('test accuracy %g' % accuracy.eval(feed_dict={
-        x: dataset.test_images[:2000], y_: dataset.test_labels[:2000]}))
+        print('test accuracy %g' % accuracy.eval(feed_dict={
+            x: dataset.test_images[:200], y_: dataset.test_labels[:200]}))
     
